@@ -13,8 +13,9 @@ use rustfs_ecstore::bucket::replication::{ReplicationConfig, ReplicationConfigur
 use rustfs_ecstore::bucket::versioning::VersioningApi as _;
 use rustfs_ecstore::bucket::versioning_sys::BucketVersioningSys;
 use rustfs_ecstore::config::storageclass;
-use rustfs_ecstore::disk::STORAGE_FORMAT_FILE;
-use rustfs_ecstore::disk::{Disk, DiskAPI};
+use rustfs_ecstore::disk::DiskAPI;
+use rustfs_ecstore::disk::disk_store::DiskStoreWrapper;
+use rustfs_ecstore::disk::{DiskStore, STORAGE_FORMAT_FILE};
 use rustfs_ecstore::error::{Error, StorageError};
 use rustfs_ecstore::global::GLOBAL_TierConfigMgr;
 use rustfs_ecstore::new_object_layer_fn;
@@ -473,7 +474,7 @@ impl ScannerIOCache for SetDisks {
 }
 
 #[async_trait::async_trait]
-impl ScannerIODisk for Disk {
+impl ScannerIODisk for DiskStoreWrapper {
     async fn get_size(&self, mut item: ScannerItem) -> Result<SizeSummary> {
         if !item.path.ends_with(&format!("{SLASH_SEPARATOR}{STORAGE_FORMAT_FILE}")) {
             return Err(StorageError::other("skip file".to_string()));
@@ -613,7 +614,7 @@ impl ScannerIODisk for Disk {
             return Err(StorageError::other("Local disk not available".to_string()));
         };
 
-        let disks = disks_result.into_iter().flatten().collect::<Vec<Arc<Disk>>>();
+        let disks = disks_result.into_iter().flatten().collect::<Vec<DiskStore>>();
 
         // Create we_sleep function (always return false for now, can be enhanced later)
         let we_sleep: Box<dyn Fn() -> bool + Send + Sync> = Box::new(|| false);

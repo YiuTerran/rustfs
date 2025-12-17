@@ -15,7 +15,7 @@
 use crate::disk::{
     CheckPartsResp, DeleteOptions, Disk, DiskAPI, DiskError, DiskInfo, DiskInfoOptions, DiskLocation, Endpoint, Error,
     FileInfoVersions, ReadMultipleReq, ReadMultipleResp, ReadOptions, RenameDataResp, Result, UpdateMetadataOpts, VolumeInfo,
-    WalkDirOptions,
+    WalkDirOptions, local::ScanGuard,
 };
 use bytes::Bytes;
 use rustfs_filemeta::{FileInfo, ObjectPartInfo, RawFileInfo};
@@ -379,6 +379,15 @@ impl DiskStoreWrapper {
 
 #[async_trait::async_trait]
 impl DiskAPI for DiskStoreWrapper {
+    async fn read_metadata(&self, volume: &str, path: &str) -> Result<Bytes> {
+        self.track_disk_health(|| async { self.disk.read_metadata(volume, path).await })
+            .await
+    }
+
+    fn start_scan(&self) -> ScanGuard {
+        self.disk.start_scan()
+    }
+
     fn to_string(&self) -> String {
         self.disk.to_string()
     }

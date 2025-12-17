@@ -34,10 +34,7 @@ use crate::server::{
 use chrono::Datelike;
 use clap::Parser;
 use license::init_license;
-use rustfs_ahm::{
-    Scanner, create_ahm_services_cancel_token, heal::storage::ECStoreHealStorage, init_heal_manager,
-    scanner::data_scanner::ScannerConfig, shutdown_ahm_services,
-};
+use rustfs_ahm::{create_ahm_services_cancel_token, heal::storage::ECStoreHealStorage, init_heal_manager, shutdown_ahm_services};
 use rustfs_common::globals::set_global_addr;
 use rustfs_ecstore::bucket::metadata_sys::init_bucket_metadata_sys;
 use rustfs_ecstore::bucket::replication::{GLOBAL_REPLICATION_POOL, init_background_replication};

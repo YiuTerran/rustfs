@@ -38,7 +38,7 @@ use rustfs_ecstore::bucket::versioning::VersioningApi;
 use rustfs_ecstore::bucket::versioning_sys::BucketVersioningSys;
 use rustfs_ecstore::cache_value::metacache_set::{ListPathRawOptions, list_path_raw};
 use rustfs_ecstore::disk::error::DiskError;
-use rustfs_ecstore::disk::{Disk, DiskAPI as _, DiskInfoOptions};
+use rustfs_ecstore::disk::{DiskAPI as _, DiskInfoOptions, DiskStore};
 use rustfs_ecstore::error::StorageError;
 use rustfs_ecstore::global::is_erasure;
 use rustfs_ecstore::pools::{path2_bucket_object, path2_bucket_object_with_base_path};
@@ -388,7 +388,7 @@ pub struct FolderScanner {
 
     we_sleep: Box<dyn Fn() -> bool + Send + Sync>,
     // should_heal: Arc<dyn Fn() -> bool + Send + Sync>,
-    disks: Vec<Arc<Disk>>,
+    disks: Vec<DiskStore>,
     disks_quorum: usize,
 
     updates: Option<mpsc::Sender<DataUsageEntry>>,
@@ -397,7 +397,7 @@ pub struct FolderScanner {
     update_current_path: UpdateCurrentPathFn,
 
     skip_heal: Arc<std::sync::atomic::AtomicBool>,
-    local_disk: Arc<Disk>,
+    local_disk: DiskStore,
 }
 
 impl FolderScanner {
@@ -1108,8 +1108,8 @@ impl FolderScanner {
 #[allow(clippy::too_many_arguments)]
 pub async fn scan_data_folder(
     ctx: CancellationToken,
-    disks: Vec<Arc<Disk>>,
-    local_disk: Arc<Disk>,
+    disks: Vec<DiskStore>,
+    local_disk: DiskStore,
     cache: DataUsageCache,
     updates: Option<mpsc::Sender<DataUsageEntry>>,
     scan_mode: HealScanMode,
