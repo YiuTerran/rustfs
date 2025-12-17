@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pub mod disk_store;
 pub mod endpoint;
 pub mod error;
 pub mod error_conv;
@@ -30,6 +31,7 @@ pub const FORMAT_CONFIG_FILE: &str = "format.json";
 pub const STORAGE_FORMAT_FILE: &str = "xl.meta";
 pub const STORAGE_FORMAT_FILE_BACKUP: &str = "xl.meta.bkp";
 
+use crate::disk::disk_store::DiskStoreWrapper;
 use crate::disk::local::ScanGuard;
 use crate::rpc::RemoteDisk;
 use bytes::Bytes;
@@ -45,7 +47,7 @@ use time::OffsetDateTime;
 use tokio::io::{AsyncRead, AsyncWrite};
 use uuid::Uuid;
 
-pub type DiskStore = Arc<Disk>;
+pub type DiskStore = Arc<DiskStoreWrapper>;
 
 pub type FileReader = Box<dyn AsyncRead + Send + Sync + Unpin>;
 pub type FileWriter = Box<dyn AsyncWrite + Send + Sync + Unpin>;
@@ -410,7 +412,7 @@ impl DiskAPI for Disk {
     }
 }
 
-pub async fn new_disk(ep: &Endpoint, opt: &DiskOption) -> Result<DiskStore> {
+async fn new_disk_internal(ep: &Endpoint, opt: &DiskOption) -> Result<Arc<Disk>> {
     if ep.is_local {
         let s = LocalDisk::new(ep, opt.cleanup).await?;
         Ok(Arc::new(Disk::Local(Box::new(s))))
@@ -418,6 +420,14 @@ pub async fn new_disk(ep: &Endpoint, opt: &DiskOption) -> Result<DiskStore> {
         let remote_disk = RemoteDisk::new(ep, opt).await?;
         Ok(Arc::new(Disk::Remote(Box::new(remote_disk))))
     }
+}
+
+/// Create a new disk store with health tracking
+pub async fn new_disk(ep: &Endpoint, opt: &DiskOption) -> Result<DiskStore> {
+    let disk = new_disk_internal(ep, opt).await?;
+    let wrapper = Arc::new(DiskStoreWrapper::new(disk, opt.health_check));
+    wrapper.start_monitoring();
+    Ok(wrapper)
 }
 
 #[async_trait::async_trait]

@@ -1977,7 +1977,7 @@ impl Scanner {
                     } else {
                         // Apply lifecycle actions
                         if let Some(lifecycle_config) = &lifecycle_config {
-                            if let Disk::Local(_local_disk) = &**disk {
+                            if let Disk::Local(_local_disk) = &*disk.get_disk() {
                                 let vcfg = BucketVersioningSys::get(bucket).await.ok();
 
                                 let mut scanner_item = ScannerItem {
