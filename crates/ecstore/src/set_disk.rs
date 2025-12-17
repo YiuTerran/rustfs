@@ -4072,7 +4072,7 @@ impl StorageAPI for SetDisks {
     async fn local_storage_info(&self) -> rustfs_madmin::StorageInfo {
         let disks = self.get_disks_internal().await;
 
-        let mut local_disks: Vec<Option<Arc<disk::Disk>>> = Vec::new();
+        let mut local_disks: Vec<Option<DiskStore>> = Vec::new();
         let mut local_endpoints = Vec::new();
 
         for (i, ep) in self.set_endpoints.iter().enumerate() {
